@@ -5,19 +5,19 @@ import solutions.base_solution as BaseSolution
 import solutions.FullyConnectedLayer as FCStack
 import solutions.LongShortTermMemory as LSTMStack
 import os
-import solutions.abc_solution as abc_solution
+import solutions.abc_solution 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
 
 @gin.configurable
-class MLPSolution(BaseSolution):
+class MLPSolution(BaseSolution.BaseSolution):
     """Multi-layer perception"""
 
     def __init__(self, input_dim, num_hiddens, activation, output_dim, output_activation, use_lstm, l2_coefficient):
         super(MLPSolution, self).__init__()
-        self.use_lstm = use_lstm
+        self._use_lstm = use_lstm
         self._output_dim = output_dim
         self._output_activation = output_activation
         if 'roulette' in self._output_activation:
@@ -26,13 +26,13 @@ class MLPSolution(BaseSolution):
             self._theta_per_grid = 2 * np.pi / self._n_grid
         self._l2_coefficient = abs(l2_coefficient)
         if self._use_lstm:
-            self._fc_stack = LSTMStack(
+            self._fc_stack = LSTMStack.LSTMStack(
                 input_dim=input_dim,
                 output_dim=output_dim,
                 num_units=num_hiddens,
             )
         else:
-            self._fc_stack = FCStack(
+            self._fc_stack = FCStack.FCStack(
                 input_dim=input_dim,
                 output_dim=output_dim,
                 num_units=num_hiddens,

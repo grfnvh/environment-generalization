@@ -4,19 +4,17 @@ import pandas as pd
 import cv2
 import numpy as np
 import solutions.base_solution as BaseSolution
-import solutions.FullyConnectedLayer as FCStack
-import solutions.LongShortTermMemory as LSTMStack
 import solutions.SelfAttention as SelfAttention
 import solutions.Multi_Layer_Perception as MLPSolution
 import os
-import solutions.abc_solution as abc_solution
+import solutions.abc_solution
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
 
 @gin.configurable
-class VisionTaskSolution(BaseSolution):
+class VisionTaskSolution(BaseSolution.BaseSolution):
     """A general solution for vision based tasks."""
 
     def __init__(self,
@@ -64,13 +62,13 @@ class VisionTaskSolution(BaseSolution):
 
         num_patches = n ** 2
         print('num_patches = {}'.format(num_patches))
-        self._attention = SelfAttention(
+        self._attention = SelfAttention.SelfAttention(
             data_dim=data_dim * self._patch_size ** 2,
             dim_q=query_dim,
         )
         self._layers.extend(self._attention.layers)
 
-        self._mlp_solution = MLPSolution(
+        self._mlp_solution = MLPSolution.MLPSolution(
             input_dim=self._top_k * 2,
             num_hiddens=num_hiddens,
             activation=activation,

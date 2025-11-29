@@ -49,6 +49,7 @@ def create_task(task_loader, **kwargs):
     Returns:
         A tasks.* object.
     """
+    print("nvec = ",)
 
     if hasattr(task_loader, 'create_task'):
         return task_loader.create_task(**kwargs)

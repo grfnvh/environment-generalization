@@ -5,7 +5,7 @@ class SelfAttention(nn.Module):
 
     def __init__(self, data_dim, dim_q):
         super(SelfAttention, self).__init__()
-        self.layers = []
+        self._layers = []
 
         #Applies an affine linear transformation to the incoming data
         # `y = xA^T + b`.
@@ -17,9 +17,9 @@ class SelfAttention(nn.Module):
         # weight matrix = (data_dim, dim_q)
         # Biad vector shape = (dim_q,)
         self._fc_q = nn.Linear(data_dim, dim_q)
-        self.layers.append(self._fc_q)
+        self._layers.append(self._fc_q)
         self._fc_k = nn.Linear(data_dim, dim_q)
-        self.layers.append(self._fc_k)
+        self._layers.append(self._fc_k)
 
     def forward(self, input_data):
         #Expect input_data to be of shape (b,t,k).
@@ -36,6 +36,6 @@ class SelfAttention(nn.Module):
     
     @property
     def layers(self):
-        return self.layers
+        return self._layers
     
     

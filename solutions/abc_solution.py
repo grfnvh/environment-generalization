@@ -25,10 +25,6 @@ class BaseSolution(abc.ABC):
         raise NotImplementedError()
     
     @abc.abstractmethod
-    def get_params_to_layer(self, layer_index):
-        raise NotImplementedError()
-    
-    @abc.abstractmethod
     def get_num_params_per_layer(self):
         raise NotImplementedError()
     
