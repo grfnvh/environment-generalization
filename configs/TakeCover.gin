@@ -1,0 +1,39 @@
+import solutions.VisionTaskSolution
+import algorithms.cma
+import utility
+import tasks.gym_task
+
+
+# CMA configurations
+cma.CMA.population_size = 256
+cma.CMA.init_sigma = 0.1
+
+cma.CMAMaster.seed = 0
+cma.CMAMaster.n_repeat = 5
+cma.CMAMaster.max_iter = 10000
+cma.CMAMaster.eval_every_n_iter = 10
+cma.CMAMaster.n_eval_roll_outs = 100
+
+utility.get_es_master.es_algorithm = @cma.CMAMaster
+utility.get_es_worker.es_algorithm = @cma.CMAWorker
+
+
+# Solution configurations
+solutions.VisionTaskSolution.VisionTaskSolution.image_size = 96
+solutions.VisionTaskSolution.VisionTaskSolution.query_dim = 4
+solutions.VisionTaskSolution.VisionTaskSolution.output_dim = 1
+solutions.VisionTaskSolution.VisionTaskSolution.output_activation = "tanh"
+solutions.VisionTaskSolution.VisionTaskSolution.num_hiddens = [16,]
+solutions.VisionTaskSolution.VisionTaskSolution.l2_coefficient = 0
+solutions.VisionTaskSolution.VisionTaskSolution.patch_size = 7
+solutions.VisionTaskSolution.VisionTaskSolution.patch_stride = 4
+solutions.VisionTaskSolution.VisionTaskSolution.top_k = 10
+solutions.VisionTaskSolution.VisionTaskSolution.data_dim = 3
+solutions.VisionTaskSolution.VisionTaskSolution.activation = "tanh"
+solutions.VisionTaskSolution.VisionTaskSolution.normalize_positions = True
+solutions.VisionTaskSolution.VisionTaskSolution.use_lstm_controller = True
+utility.create_solution.solution_loader = @solutions.VisionTaskSolution.VisionTaskSolution()
+
+# Task configurations
+utility.create_task.render = False
+utility.create_task.task_loader = @gym_task.TakeCoverTask()
