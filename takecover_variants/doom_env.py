@@ -7,16 +7,13 @@ import numpy as np
 
 import gymnasium
 from gymnasium import spaces, error
-from gymnasium.utils import seeding
+from gymnasium.utils.seeding import np_random
 
-try:
-    import vizdoom
-    from vizdoom import DoomGame, Mode, Button, GameVariable, ScreenFormat, ScreenResolution, Loader
-    from vizdoom import ViZDoomUnexpectedExitException, ViZDoomErrorException
-except ImportError as e:
-    raise gymnasium.error.DependencyNotInstalled("{}. (HINT: you can install Doom dependencies " +
-                                           "with 'pip install doom_py.)'".format(e))
-
+import vizdoom
+from vizdoom import DoomGame, Mode, Button, GameVariable, ScreenFormat, ScreenResolution
+from vizdoom import ViZDoomUnexpectedExitException, ViZDoomErrorException
+        
+    
 logger = logging.getLogger(__name__)
 
 # Constants
@@ -65,7 +62,6 @@ class DoomEnv(gymnasium.Env):
         self.previous_level = -1
         self.level = level
         self.game = DoomGame()
-        self.loader = Loader()
         self.doom_dir = os.path.dirname(os.path.abspath(__file__))
         self._mode = 'algo'                         # 'algo' or 'human'
         self.no_render = False                      # To disable double rendering in human mode
@@ -73,8 +69,28 @@ class DoomEnv(gymnasium.Env):
         self.is_initialized = False                 # Indicates that reset() has been called
         self.curr_seed = 0
         self.lock = (DoomLock()).get_lock()
-        self.action_space = spaces.MultiDiscrete([[0, 1]] * 38 + [[-10, 10]] * 2 + [[-100, 100]] * 3)
+        #MultiDiscrete(nvec, dtype, seed, start) -The arg "nvec" will determine the number of values each categorical variable can take.
+        #nvec = vector of counts of each categorical variable.
+        #  This will usually be a list of integers.
+        #  However, you may also pass a more complicated numpy array
+        #  if you'd like the space to have several axes.
+        #dtype = this should be some kind of integer
+        #seed = Optionally you can use this arg to seed the RNG
+        #  that is used to sample from the space
+        #start = Optionally, the starting value 
+        # the element of each class will take (defaults to 0).
+        #self.action_space = spaces.MultiDiscrete([[0, 1]] * 38 + [[-10, 10]] * 2 + [[-100, 100]] * 3)
+        #self._action_mins = np.array([0]*38 + [-10]*2 + [-100]*3, dtype=np.int32)
+        self._action_ranges = [2]*38 + [21]*2 + [201]*3
+
+        try:
+            self.action_space = spaces.MultiDiscrete(self._action_ranges, dtype=np.int32)
+        except TypeError:
+            # older gym does not accept dtype kwarg
+            self.action_space = spaces.MultiDiscrete(self._action_ranges)
+
         self.allowed_actions = list(range(NUM_ACTIONS))
+
         self.screen_height = 480
         self.screen_width = 640
         self.screen_resolution = ScreenResolution.RES_640X480
@@ -104,8 +120,8 @@ class DoomEnv(gymnasium.Env):
         else:
             # Loading Paths
             if not self.is_initialized:
-                self.game.set_vizdoom_path(self.loader.get_vizdoom_path())
-                self.game.set_doom_game_path(self.loader.get_freedoom_path())
+                self.game.set_vizdoom_path()
+                self.game.set_doom_game_path()
 
             # Common settings
             self.game.load_config(os.path.join(self.doom_dir, 'assets/%s' % DOOM_SETTINGS[self.level][CONFIG]))
@@ -119,6 +135,7 @@ class DoomEnv(gymnasium.Env):
             self.game.set_doom_skill(DOOM_SETTINGS[self.level][DIFFICULTY])
             self.allowed_actions = DOOM_SETTINGS[self.level][ACTIONS]
             self.game.set_screen_resolution(self.screen_resolution)
+            self.game.set_screen_buffer_enabled(True)
 
         self.previous_level = self.level
         self._closed = False
@@ -240,7 +257,7 @@ class DoomEnv(gymnasium.Env):
                 img = np.zeros(shape=self.observation_space.shape, dtype=np.uint8)
             if mode == 'rgb_array':
                 return img
-            elif mode is 'human':
+            elif mode == 'human':
                 from gymnasium.envs.classic_control import rendering
                 if self.viewer is None:
                     self.viewer = rendering.SimpleImageViewer()
@@ -254,8 +271,11 @@ class DoomEnv(gymnasium.Env):
             self.game.close()
 
     def _seed(self, seed=None):
-        self.curr_seed = seeding.hash_seed(seed) % 2 ** 32
-        return [self.curr_seed]
+        rng, seed = np_random(seed)
+        self.np_random = rng
+        self.curr_seed = seed  # Gymnasium already returns a proper 32-bit seed
+
+        return [seed]
 
     def _get_game_variables(self, state_variables):
         info = {
@@ -295,7 +315,7 @@ class MetaDoomEnv(DoomEnv):
         self.average_over = average_over
         self.passing_grade = passing_grade
         self.min_tries_for_avg = min_tries_for_avg              # Need to use at least this number of tries to calc avg
-        self.scores = [[]] * NUM_LEVELS
+        self.scores = [[] for _ in range(NUM_LEVELS)]
         self.locked_levels = [True] * NUM_LEVELS                # Locking all levels but the first
         self.locked_levels[0] = False
         self.total_reward = 0
