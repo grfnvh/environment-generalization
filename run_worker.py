@@ -15,6 +15,9 @@ def main(config):
     """Start the worker."""
 
     gin.parse_config_file(config.config)
+    print("=== ACTIVE GIN CONFIG ===")
+    print(gin.operative_config_str())
+    print("==========================")
     logger = utility.create_logger(
         name='es_worker{}'.format(config.worker_id), log_dir=config.log_dir)
 

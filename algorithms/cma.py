@@ -1,12 +1,12 @@
 import cma
 import gin
 import numpy as np
-import algorithms.abc
+import algorithms.abc as abc
 from utility import MAX_INT
-
+import protobuf.roll_out_service_pb2_grpc
 
 @gin.configurable
-class CMA(algorithms.abc.EvolutionAlgorithm):
+class CMA(abc.EvolutionAlgorithm):
     """CMA algorithm."""
 
     def __init__(self,
@@ -41,7 +41,7 @@ class CMA(algorithms.abc.EvolutionAlgorithm):
 
 
 @gin.configurable
-class CMAMaster(algorithms.abc.BaseESMaster):
+class CMAMaster(abc.BaseESMaster):
     """CMA master."""
 
     def __init__(self,
@@ -107,20 +107,33 @@ class CMAMaster(algorithms.abc.BaseESMaster):
             raise NotImplementedError()
         self._solution.set_params(self._algorithm.get_current_parameters())
 
+    def syncParameter(self, request, context):
+        # with self._params_lock:
+        #     params_list = [float(x) for x in self._params.tolist()]
+        params_list = self._algorithm.get_current_parameters()
+        resp = protobuf.roll_out_service_pb2.ParamSyncResponse(parameters=params_list)
+        self._logger.debug("syncParameter called; returning %d parameters", len(params_list))
+        return resp
 
 @gin.configurable
-class CMAWorker(algorithms.abc.BaseESWorker):
+class CMAWorker(abc.BaseESWorker):
     """CMA worker."""
 
-    def __init__(self, logger):
+    def __init__(self, logger,master=None, **kwargs):
         """Initialize the worker."""
 
         super(CMAWorker, self).__init__(logger=logger)
         self._logger.info('CMAWorker initialized.')
+        self.master = master
+
 
     def _handle_master_request(self, request):
+        
         params = np.asarray(request.cma_parameters.parameters)
+        
         self._solution.set_params(params)
+        #VisionSolution is there
+        #seed= 209652396
         self._task.seed(request.env_seed)
         score = self._task.roll_out(self._solution, request.evaluate)
         penalty = 0 if request.evaluate else self._solution.get_l2_penalty()

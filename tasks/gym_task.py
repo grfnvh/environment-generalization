@@ -1,6 +1,7 @@
 import cv2
 import gin
 import gymnasium
+from vizdoom import gymnasium_wrapper
 from gymnasium import spaces
 import numpy as np
 import os
@@ -26,10 +27,34 @@ class GymTask(tasks.abc_task.BaseTask):
             self._env.seed(seed)
 
     def reset(self):
-        return self._env.reset()
+        #print(self._env)
+        result = self._env.reset()
+        print("DEBUG reset result:", result)
+        # Gymnasium: (obs, info)
+        if isinstance(result, tuple) and len(result) == 2:
+            obs, info = result
+            return obs,info
+
+        # Classic Gym: obs only
+        return result
     
     def step(self, action, evaluate):
-        return self._env.step(action)
+        result = self._env._step(action)
+
+        # Gymnasium: (obs, reward, terminated, truncated, info)
+        if isinstance(result, tuple) and len(result) == 5:
+            obs, reward, terminated, truncated,info = result
+            done = terminated or truncated
+            return obs, reward, done
+
+        # Classic Gym: (obs, reward, done, info)
+        if isinstance(result, tuple) and len(result) == 4:
+            obs, reward, terminated, truncated = result
+            done = terminated or truncated
+            return obs, reward, done
+
+        # Something went wrong
+        raise ValueError(f"Unexpected env.step() return: {result}")
     
     def close(self):
         self._env.close()
@@ -45,7 +70,10 @@ class GymTask(tasks.abc_task.BaseTask):
             self._env.render()
 
     def roll_out(self, solution, evaluate):
-        ob = self.reset()
+        self._logger.info(evaluate)#roll_out info
+        ob= self.reset()
+        # Extract the image the policy expects
+                
         ob = self._process_observation(ob)
         if hasattr(solution, 'reset'):
             solution.reset()
@@ -58,15 +86,17 @@ class GymTask(tasks.abc_task.BaseTask):
         while not done:
             action = solution.get_output(inputs=ob, update_filter=not evaluate)
             action = self._process_action(action)
-            ob, r, done, _ = self.step(action, evaluate)
+            ob, reward, done = self.step(action, evaluate)
+            #print("at step:"+ob)
+
             ob = self._process_observation(ob)
 
             if self._render:
                 self._show_gui()
 
             step_cnt += 1
-            done = self._overwrite_terminate_flag(r, done, step_cnt, evaluate)
-            step_reward = self._process_reward(r, done, evaluate)
+            done = self._overwrite_terminate_flag(reward, done, step_cnt, evaluate)
+            step_reward = self._process_reward(reward, done, evaluate)
             rewards.append(step_reward)
 
         time_cost = time.time() - start_time
@@ -86,7 +116,7 @@ class TakeCoverTask(GymTask):
     def __init__(self):
         super(TakeCoverTask, self).__init__()
         self._float_text_env = False
-        self._text_img_path = '/opt/app/takecover_variants/attention_agent.png'
+        self._text_img_path = 'takecover_variants/attention_agent.png'
 
     def create_task(self, **kwargs):
         if 'render' in kwargs:
@@ -99,6 +129,7 @@ class TakeCoverTask(GymTask):
             if modification == 'text':
                 self._float_text_env = True
         self._logger.info('modification: {}'.format(modification))
+        print("modification: " + modification)
         self._env = DoomTakeCoverEnv(modification)
         return self
 

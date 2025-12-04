@@ -10,6 +10,7 @@ from gymnasium import spaces, error
 from gymnasium.utils.seeding import np_random
 
 import vizdoom
+from vizdoom import gymnasium_wrapper
 from vizdoom import DoomGame, Mode, Button, GameVariable, ScreenFormat, ScreenResolution
 from vizdoom import ViZDoomUnexpectedExitException, ViZDoomErrorException
         
@@ -59,28 +60,29 @@ class DoomEnv(gymnasium.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 35}
 
     def __init__(self, level):
+        print("in the doom_env init with level = "+ str(level))
         self.previous_level = -1
         self.level = level
         self.game = DoomGame()
+
         self.doom_dir = os.path.dirname(os.path.abspath(__file__))
+
+        
+        scenario_path = os.path.join(self.doom_dir,"assets", DOOM_SETTINGS[self.level][1])
+        config_path = os.path.join(self.doom_dir, "assets", DOOM_SETTINGS[self.level][0])
+
+        print("Loading config:", config_path)
+        print("Loading scenario:", scenario_path)
+
+        self.game.load_config(config_path)
+        self.game.set_doom_scenario_path(scenario_path)
         self._mode = 'algo'                         # 'algo' or 'human'
         self.no_render = False                      # To disable double rendering in human mode
         self.viewer = None
         self.is_initialized = False                 # Indicates that reset() has been called
         self.curr_seed = 0
+        
         self.lock = (DoomLock()).get_lock()
-        #MultiDiscrete(nvec, dtype, seed, start) -The arg "nvec" will determine the number of values each categorical variable can take.
-        #nvec = vector of counts of each categorical variable.
-        #  This will usually be a list of integers.
-        #  However, you may also pass a more complicated numpy array
-        #  if you'd like the space to have several axes.
-        #dtype = this should be some kind of integer
-        #seed = Optionally you can use this arg to seed the RNG
-        #  that is used to sample from the space
-        #start = Optionally, the starting value 
-        # the element of each class will take (defaults to 0).
-        #self.action_space = spaces.MultiDiscrete([[0, 1]] * 38 + [[-10, 10]] * 2 + [[-100, 100]] * 3)
-        #self._action_mins = np.array([0]*38 + [-10]*2 + [-100]*3, dtype=np.int32)
         self._action_ranges = [2]*38 + [21]*2 + [201]*3
 
         try:
@@ -95,8 +97,9 @@ class DoomEnv(gymnasium.Env):
         self.screen_width = 640
         self.screen_resolution = ScreenResolution.RES_640X480
         self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
-        self._seed()
+        #self._seed()
         self._configure()
+        self.game.init()
 
     def _configure(self, lock=None, **kwargs):
         if 'screen_resolution' in kwargs:
@@ -119,23 +122,23 @@ class DoomEnv(gymnasium.Env):
 
         else:
             # Loading Paths
-            if not self.is_initialized:
-                self.game.set_vizdoom_path()
-                self.game.set_doom_game_path()
+            # if not self.is_initialized:
+            #     self.game.set_vizdoom_path()
+            #     self.game.set_doom_game_path()
 
             # Common settings
             self.game.load_config(os.path.join(self.doom_dir, 'assets/%s' % DOOM_SETTINGS[self.level][CONFIG]))
             if self.level == 9 or self.level == 10:
                 # Load modified wad.
-                self.game.set_doom_scenario_path(os.path.join('/opt/app/takecover_variants/assets', DOOM_SETTINGS[self.level][SCENARIO]))
+                self.game.set_doom_scenario_path(os.path.join(self.doom_dir, 'assets/%s' % DOOM_SETTINGS[self.level][SCENARIO]))
             else:
-                self.game.set_doom_scenario_path(self.loader.get_scenario_path(DOOM_SETTINGS[self.level][SCENARIO]))
+                self.game.set_doom_scenario_path(os.path.join(self.doom_dir, 'assets/%s' % DOOM_SETTINGS[self.level][SCENARIO]))
             if DOOM_SETTINGS[self.level][MAP] != '':
                 self.game.set_doom_map(DOOM_SETTINGS[self.level][MAP])
             self.game.set_doom_skill(DOOM_SETTINGS[self.level][DIFFICULTY])
             self.allowed_actions = DOOM_SETTINGS[self.level][ACTIONS]
             self.game.set_screen_resolution(self.screen_resolution)
-            self.game.set_screen_buffer_enabled(True)
+            #self.game.set_screen_buffer_enabled(True)
 
         self.previous_level = self.level
         self._closed = False
@@ -157,7 +160,8 @@ class DoomEnv(gymnasium.Env):
                     'singleton lock in memory.')
             self._start_episode()
             self.is_initialized = True
-            return self.game.get_state().image_buffer.copy()
+            
+            return self.game.get_state().screen_buffer.copy()
 
         # Human mode
         else:
@@ -174,6 +178,7 @@ class DoomEnv(gymnasium.Env):
 
     def _start_episode(self):
         if self.curr_seed > 0:
+            print(self.curr_seed)
             self.game.set_seed(self.curr_seed)
             self.curr_seed = 0
         self.game.new_episode()
@@ -198,45 +203,77 @@ class DoomEnv(gymnasium.Env):
         return
 
     def _step(self, action):
-        if NUM_ACTIONS != len(action):
-            logger.warn('Doom action list must contain %d items. Padding missing items with 0' % NUM_ACTIONS)
-            old_action = action
-            action = [0] * NUM_ACTIONS
-            for i in range(len(old_action)):
-                action[i] = old_action[i]
-        # action is a list of numbers but DoomGame.make_action expects a list of ints
-        if len(self.allowed_actions) > 0:
-            list_action = [int(action[action_idx]) for action_idx in self.allowed_actions]
-        else:
-            list_action = [int(x) for x in action]
+        # Ensure action is a numpy array of correct length
+        action = np.asarray(action, dtype=np.int32)
+        print("inside step")
+        if len(action) != NUM_ACTIONS:
+            logger.warning(f'Doom action list must contain {NUM_ACTIONS} items. Padding/truncating as needed.')
+            padded = np.zeros(NUM_ACTIONS, dtype=np.int32)
+            padded[:min(len(action), NUM_ACTIONS)] = action[:NUM_ACTIONS]
+            action = padded
+
+        # Map action using allowed indices if specified
+        list_action = [int(action[i]) for i in self.allowed_actions] if self.allowed_actions else action.tolist()
+
         try:
             reward = self.game.make_action(list_action)
             state = self.game.get_state()
-            info = self._get_game_variables(state.game_variables)
-            info["TOTAL_REWARD"] = round(self.game.get_total_reward(), 4)
 
-            if self.game.is_episode_finished():
-                is_finished = True
-                return np.zeros(shape=self.observation_space.shape, dtype=np.uint8), reward, is_finished, info
-            else:
-                is_finished = False
-                return state.image_buffer.copy(), reward, is_finished, info
+            # Determine if the episode is finished or state is invalid
+            done = state is None or state.screen_buffer is None or self.game.is_episode_finished()
+
+            # Prepare observation
+            obs = np.zeros(self.observation_space.shape, dtype=np.uint8) if done else state.screen_buffer.copy()
+
+            # Prepare info dictionary
+            info = self._get_game_variables(state.game_variables) if state else {}
+            info["TOTAL_REWARD"] = round(self.game.get_total_reward(), 4) if state else 0
+
+            return obs, reward, done, info
 
         except vizdoom.ViZDoomIsNotRunningException:
-            return np.zeros(shape=self.observation_space.shape, dtype=np.uint8), 0, True, {}
+            # Safe fallback if Doom is not running
+            obs = np.zeros(self.observation_space.shape, dtype=np.uint8)
+            return obs, 0, True, {}
+        # if NUM_ACTIONS != len(action):
+        #     logger.warning('Doom action list must contain %d items. Padding missing items with 0' % NUM_ACTIONS)
+        #     old_action = action
+        #     action = [0] * NUM_ACTIONS
+        #     for i in range(len(old_action)):
+        #         action[i] = old_action[i]
+        # # action is a list of numbers but DoomGame.make_action expects a list of ints
+        # if len(self.allowed_actions) > 0:
+        #     list_action = [int(action[action_idx]) for action_idx in self.allowed_actions]
+        # else:
+        #     list_action = [int(x) for x in action]
+        # try:
+        #     reward = self.game.make_action(list_action)
+        #     state = self.game.get_state()
+        #     info = self._get_game_variables(state.game_variables)
+        #     info["TOTAL_REWARD"] = round(self.game.get_total_reward(), 4)
 
-    def _reset(self):
+        #     if self.game.is_episode_finished():
+        #         is_finished = True
+        #         return np.zeros(shape=self.observation_space.shape, dtype=np.uint8), reward, is_finished, info
+        #     else:
+        #         is_finished = False
+        #         return state.image_buffer.copy(), reward, is_finished, info
+
+        # except vizdoom.ViZDoomIsNotRunningException:
+        #     return np.zeros(shape=self.observation_space.shape, dtype=np.uint8), 0, True, {}
+
+    def reset(self):
         if self.is_initialized and not self._closed:
             self._start_episode()
-            image_buffer = self.game.get_state().image_buffer
-            if image_buffer is None:
+            screen_buffer = self.game.get_state().screen_buffer
+            if screen_buffer is None:
                 raise error.Error(
                     'VizDoom incorrectly initiated. This is likely caused by a missing multiprocessing lock. ' +
                     'To run VizDoom across multiple processes, you need to pass a lock when you configure the env ' +
                     '[e.g. env.configure(lock=my_multiprocessing_lock)], or create and close an env ' +
                     'before starting your processes [e.g. env = gym.make("DoomBasic-v0"); env.close()] to cache a ' +
                     'singleton lock in memory.')
-            return image_buffer.copy()
+            return screen_buffer.copy()
         else:
             return self._load_level()
 
@@ -250,7 +287,7 @@ class DoomEnv(gymnasium.Env):
             if 'human' == mode and self.no_render:
                 return
             state = self.game.get_state()
-            img = state.image_buffer
+            img = state.screen_buffer
             # VizDoom returns None if the episode is finished, let's make it
             # an empty image so the recorder doesn't stop
             if img is None:
@@ -432,7 +469,7 @@ class MetaDoomEnv(DoomEnv):
                 averages[i] = round(level_average, 4)
         return averages
 
-    def _reset(self):
+    def reset(self):
         # Reset is called on first step() after level is finished
         # or when change_level() is called. Returning if neither have been called to
         # avoid resetting the level twice
@@ -441,7 +478,7 @@ class MetaDoomEnv(DoomEnv):
 
         if self.is_initialized and not self._closed and self.previous_level == self.level:
             self._start_episode()
-            return self.game.get_state().image_buffer.copy()
+            return self.game.get_state().screen_buffer.copy()
         else:
             return self._load_level()
 

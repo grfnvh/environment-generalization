@@ -7,10 +7,8 @@ from typing import Optional, List
 def run_experiment(
     config_file: str = "configs/TakeCover.gin",
     num_workers: int = 8,
-    start_param_sync_service: bool = False,
+    start_param_sync_service: bool = True,
     experiment_name: str = "test",
-    bucket_name: str = "es_experiments",
-    json_file: str = "gcs.json",
     extra_worker_args: Optional[List[str]] = None,
 ):
     """
@@ -55,14 +53,21 @@ def run_experiment(
     print("\nStarting master...\n")
 
     # Launch master
+    # master_cmd = [
+    #     "python", "run_master.py",
+    #     f"--config={config_file}",
+    #     f"--num-workers={num_workers}",
+    #     f"--gcs-bucket={bucket_name}",
+    #     f"--gcs-experiment-name={experiment_name}",
+    #     f"--gcs-credential={json_file}",
+    # ] + MASTER_OPTION
     master_cmd = [
-        "python", "run_master.py",
-        f"--config={config_file}",
-        f"--num-workers={num_workers}",
-        f"--gcs-bucket={bucket_name}",
-        f"--gcs-experiment-name={experiment_name}",
-        f"--gcs-credential={json_file}",
+    "python", "run_master.py",
+    f"--config={config_file}",
+    f"--num-workers={num_workers}",
+    "--disable-gcs"
     ] + MASTER_OPTION
+
 
     master_log_path = os.path.join(log_dir, "master.log")
     master_log = open(master_log_path, "w")
@@ -88,3 +93,6 @@ def run_experiment(
     print("\nAll workers terminated.")
     print(f"Logs saved under: {log_dir}")
     print("Done.")
+
+if __name__ == "__main__":
+    run_experiment(num_workers=1)

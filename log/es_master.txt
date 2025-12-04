@@ -1,0 +1,40 @@
+2025-12-03 21:15:00,315 2536 [INFO] Workers: ['127.0.0.1:20000']
+2025-12-03 21:15:01,343 2536 [INFO] Bucket: None, JSON: None
+2025-12-03 21:15:01,514 2536 [INFO] Master initialized, algorithm=<algorithms.cma.CMA object at 0x000001CED94E9790>
+2025-12-03 21:15:01,646 2536 [INFO] Start to train.
+2025-12-03 21:15:06,968 2536 [INFO] [TEST] Iter 0: size(scores)=100, max(scores)=1.00, mean(scores)=1.00, min(scores)=1.00, sd(scores)=0.00
+2025-12-03 21:15:07,100 2536 [INFO] Start training for 10000 iterations.
+2025-12-03 21:16:43,840 2536 [INFO] 1-step training time: 96.7397530078888s
+2025-12-03 21:16:43,840 2536 [INFO] Iter 1: size(scores)=256, max(scores)=1.00, mean(scores)=1.00, min(scores)=1.00, sd(scores)=0.00
+2025-12-03 21:18:18,701 2536 [INFO] 1-step training time: 94.86066436767578s
+2025-12-03 21:18:18,702 2536 [INFO] Iter 2: size(scores)=256, max(scores)=1.00, mean(scores)=1.00, min(scores)=1.00, sd(scores)=0.00
+2025-12-03 21:19:52,123 2536 [INFO] 1-step training time: 93.42042851448059s
+2025-12-03 21:19:52,124 2536 [INFO] Iter 3: size(scores)=256, max(scores)=1.00, mean(scores)=1.00, min(scores)=1.00, sd(scores)=0.00
+2025-12-03 21:22:54,976 28644 [INFO] Workers: ['127.0.0.1:20000']
+2025-12-03 21:22:56,009 28644 [INFO] Bucket: None, JSON: None
+2025-12-03 21:22:56,167 28644 [INFO] Master initialized, algorithm=<algorithms.cma.CMA object at 0x000002A1DA9E7790>
+2025-12-03 21:22:56,284 28644 [INFO] Start to train.
+2025-12-03 21:23:03,368 28644 [INFO] [TEST] Iter 0: size(scores)=100, max(scores)=1.00, mean(scores)=1.00, min(scores)=1.00, sd(scores)=0.00
+2025-12-03 21:23:03,533 28644 [INFO] Start training for 10000 iterations.
+2025-12-03 21:24:34,761 28644 [INFO] 1-step training time: 91.2273211479187s
+2025-12-03 21:24:34,761 28644 [INFO] Iter 1: size(scores)=256, max(scores)=0.15, mean(scores)=0.11, min(scores)=0.05, sd(scores)=0.02
+2025-12-03 21:26:27,939 28644 [INFO] 1-step training time: 113.17807388305664s
+2025-12-03 21:26:27,939 28644 [INFO] Iter 2: size(scores)=256, max(scores)=0.18, mean(scores)=0.13, min(scores)=0.09, sd(scores)=0.02
+2025-12-03 21:28:37,135 28644 [INFO] 1-step training time: 129.1958303451538s
+2025-12-03 21:28:37,135 28644 [INFO] Iter 3: size(scores)=256, max(scores)=0.19, mean(scores)=0.15, min(scores)=0.11, sd(scores)=0.02
+2025-12-03 21:30:38,343 28644 [INFO] 1-step training time: 121.20666527748108s
+2025-12-03 21:30:38,343 28644 [INFO] Iter 4: size(scores)=256, max(scores)=0.21, mean(scores)=0.17, min(scores)=0.12, sd(scores)=0.01
+2025-12-03 21:32:39,861 28644 [INFO] 1-step training time: 121.51862001419067s
+2025-12-03 21:32:39,861 28644 [INFO] Iter 5: size(scores)=256, max(scores)=0.23, mean(scores)=0.19, min(scores)=0.14, sd(scores)=0.02
+2025-12-03 21:34:44,591 28644 [INFO] 1-step training time: 124.72962832450867s
+2025-12-03 21:34:44,592 28644 [INFO] Iter 6: size(scores)=256, max(scores)=0.25, mean(scores)=0.21, min(scores)=0.17, sd(scores)=0.01
+2025-12-03 21:37:09,420 28644 [INFO] 1-step training time: 144.82771158218384s
+2025-12-03 21:37:09,421 28644 [INFO] Iter 7: size(scores)=256, max(scores)=0.26, mean(scores)=0.22, min(scores)=0.16, sd(scores)=0.02
+2025-12-03 21:39:27,569 28644 [INFO] 1-step training time: 138.14760732650757s
+2025-12-03 21:39:27,569 28644 [INFO] Iter 8: size(scores)=256, max(scores)=0.28, mean(scores)=0.24, min(scores)=0.20, sd(scores)=0.02
+2025-12-03 21:41:33,045 28644 [INFO] 1-step training time: 125.4757912158966s
+2025-12-03 21:41:33,046 28644 [INFO] Iter 9: size(scores)=256, max(scores)=0.29, mean(scores)=0.26, min(scores)=0.22, sd(scores)=0.01
+2025-12-03 21:43:40,855 28644 [INFO] 1-step training time: 127.80903720855713s
+2025-12-03 21:43:40,856 28644 [INFO] Iter 10: size(scores)=256, max(scores)=0.30, mean(scores)=0.27, min(scores)=0.23, sd(scores)=0.01
+2025-12-03 21:43:50,188 28644 [INFO] Evaluation time: 9.332722187042236s
+2025-12-03 21:43:50,188 28644 [INFO] [TEST] Iter 10: size(scores)=100, max(scores)=1.00, mean(scores)=1.00, min(scores)=1.00, sd(scores)=0.00

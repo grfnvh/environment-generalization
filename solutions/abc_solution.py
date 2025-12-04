@@ -41,9 +41,10 @@ class BaseSolution(abc.ABC):
         raise NotImplementedError()
     
     def get_l2_penalty(self):
-        if not hasattr(self, '_l2_coefficents'):
-            raise ValueError('l2_coefficient not specified')
+        # if not hasattr(self, '_l2_coefficents'):
+        #     raise ValueError('_l2_coefficient not specified')
         params = self.get_params()
+        print(self._l2_coefficient)
         return self._l2_coefficient * np.sum(params**2)
     
     def add_noise(self, noise):

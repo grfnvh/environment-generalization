@@ -22,7 +22,7 @@ class EvolutionAlgorithm(abc.ABC):
         raise NotImplementedError()
 
 
-class BaseESMaster(abc.ABC):
+class BaseESMaster(abc.ABC,protobuf.roll_out_service_pb2_grpc.RollOutServiceServicer):
     """Base ES master."""
 
     def __init__(self,
@@ -155,6 +155,8 @@ class BaseESMaster(abc.ABC):
     @abc.abstractmethod
     def _update_solution(self):
         raise NotImplementedError()
+    #used by workers to fetch the current parameters
+
 
 
 class BaseESWorker(abc.ABC,
@@ -175,7 +177,7 @@ class BaseESWorker(abc.ABC,
         raise NotImplementedError()
 
     def performRollOut(self, request, context):
-
+        #request.evaluate = False
         fitness = self._handle_master_request(request)
 
         return self._communication_helper.report_fitness(

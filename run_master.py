@@ -16,6 +16,9 @@ def main(config):
     """Start the master."""
 
     gin.parse_config_file(config.config)
+    print("=== ACTIVE GIN CONFIG ===")
+    print(gin.operative_config_str())
+    print("==========================")
     utility.save_config(log_dir=config.log_dir, config=config.config)
     logger = utility.create_logger(
         name='es_master', log_dir=config.log_dir)
@@ -51,6 +54,8 @@ def main(config):
         experiment_name=config.gcs_experiment_name,
         credential=config.gcs_credential,
     )
+
+    print(config)
 
     # Start the parameters synchronization service.
     if config.start_param_sync_service:

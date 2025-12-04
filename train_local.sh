@@ -3,7 +3,7 @@
 
 START_PARAM_SYNC_SERVICE=0
 NUM_WORKERS=8
-CONFIG_FILE="configs/CarRacing.gin"
+CONFIG_FILE="configs/TakeCover.gin"
 JSON_FILE="gcs.json"
 BUCKET_NAME="es_experiments"
 EXPERIMENT_NAME="test"
